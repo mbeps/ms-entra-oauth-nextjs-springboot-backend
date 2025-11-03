@@ -64,11 +64,11 @@ public class AuthController {
         
         if (principal != null) {
             UserResponse user = UserResponse.builder()
-                    .id(OAuth2AttributeExtractor.getIntegerAttribute(principal, "id"))
-                    .login(OAuth2AttributeExtractor.getStringAttribute(principal, "login"))
-                    .name(OAuth2AttributeExtractor.getStringAttribute(principal, "name"))
-                    .email(OAuth2AttributeExtractor.getStringAttribute(principal, "email"))
-                    .avatarUrl(OAuth2AttributeExtractor.getStringAttribute(principal, "avatar_url"))
+                    .id(OAuth2AttributeExtractor.getUserId(principal))
+                    .login(OAuth2AttributeExtractor.getLogin(principal))
+                    .name(OAuth2AttributeExtractor.getName(principal))
+                    .email(OAuth2AttributeExtractor.getEmail(principal))
+                    .avatarUrl(OAuth2AttributeExtractor.getAvatarUrl(principal))
                     .build();
 
             log.info("Auth status checked for user: {}", user.getLogin());
@@ -133,6 +133,7 @@ public class AuthController {
             // Create a minimal OAuth2User for token generation
             Map<String, Object> attributes = new HashMap<>();
             attributes.put("login", username);
+            attributes.put("preferred_username", username);
             
             OAuth2User oauth2User = new DefaultOAuth2User(
                     Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
