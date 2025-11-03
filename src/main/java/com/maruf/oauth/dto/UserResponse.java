@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Represents the subset of OAuth user profile data required by the frontend.
- * Uses camel case field names that mirror GitHub responses to avoid extra mapping.
+ * Uses camel case field names to align with the frontend models.
  *
  * @author Maruf Bepary
  */
@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponse {
-    private Integer id;  // Changed from Long to Integer (GitHub returns Integer)
+    private String id;
     private String login;
     private String name;
     private String email;

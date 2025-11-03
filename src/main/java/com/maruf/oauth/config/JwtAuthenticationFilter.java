@@ -76,18 +76,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     Claims claims = jwtService.extractAllClaims(jwt);
                     
                     // Reconstruct OAuth2User from JWT claims
-                    // Handle Integer type properly (GitHub returns Integer for id)
                     Map<String, Object> attributes = new HashMap<>();
-                    Object idClaim = claims.get("id");
-                    if (idClaim instanceof Integer) {
-                        attributes.put("id", idClaim);
-                    } else if (idClaim instanceof Long) {
-                        attributes.put("id", ((Long) idClaim).intValue());
-                    } else if (idClaim instanceof Number) {
-                        attributes.put("id", ((Number) idClaim).intValue());
-                    }
-                    
-                    attributes.put("login", claims.get("login"));
+                    attributes.put("id", claims.get("id"));
+                    Object loginClaim = claims.get("login");
+                    String loginValue = loginClaim != null ? loginClaim.toString() : claims.getSubject();
+                    attributes.put("login", loginValue);
+                    attributes.put("preferred_username", loginValue);
                     attributes.put("name", claims.get("name"));
                     attributes.put("email", claims.get("email"));
                     attributes.put("avatar_url", claims.get("avatar_url"));
@@ -108,7 +102,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     
-                    log.debug("JWT validated for user: {}", claims.get("login"));
+                    log.debug("JWT validated for user: {}", loginValue);
                 }
             } catch (Exception e) {
                 log.error("JWT validation failed: {}", e.getMessage());

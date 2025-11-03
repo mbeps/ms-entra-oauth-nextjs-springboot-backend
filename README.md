@@ -1,7 +1,7 @@
 # **Backend for Next.JS & Spring Boot OAuth System**
 
 A robust OAuth 2.0 authentication backend built with Spring Boot 3 and MongoDB. 
-This server handles secure GitHub OAuth integration, JWT token generation, and session management for the [Next.JS frontend](https://github.com/mbeps/oauth-nextjs-springboot-frontend). 
+This server handles secure Microsoft Entra ID (Azure AD) OAuth integration, JWT token generation, and session management for the [Next.JS frontend](https://github.com/mbeps/oauth-nextjs-springboot-frontend). 
 
 The application implements a dual-token authentication system with short-lived access tokens and long-lived refresh tokens, both stored as httpOnly cookies to prevent XSS attacks. 
 MongoDB provides persistent storage for refresh tokens and invalidated access tokens, ensuring secure session management and proper token revocation. 
@@ -11,7 +11,7 @@ CORS is configured to allow cross-origin requests from the frontend whilst maint
 
 ## OAuth 2.0 Authentication
 The application provides complete OAuth authentication functionality:
-- GitHub OAuth 2.0 integration with Spring Security
+- Microsoft Entra ID OAuth 2.0 integration with Spring Security
 - Automatic user authentication and authorisation
 - Secure callback handling and token exchange
 - Error handling for failed authentication attempts
@@ -55,7 +55,7 @@ Health check endpoints for monitoring:
 These are the requirements needed to run the project:
 - Java 17 or higher
 - MongoDB 4.4 or higher
-- GitHub OAuth Application credentials (Client ID and Client Secret)
+- Microsoft Entra ID application credentials (Client ID, Client Secret, and Tenant ID)
 - (Optional) [Next.JS frontend](https://github.com/mbeps/oauth-nextjs-springboot-frontend) running
 
 # Stack
@@ -100,7 +100,7 @@ All tokens are signed using HMAC-SHA256 with a secret key.
 CORS is configured to accept requests from `http://localhost:3000` (frontend URL) with credentials enabled. Allowed methods include GET, POST, PUT, DELETE, and OPTIONS. This enables secure cross-origin communication whilst preventing unauthorised access.
 
 ## Authentication Flow
-1. User initiates GitHub OAuth login
+1. User initiates Microsoft Entra ID OAuth login
 2. Spring Security handles OAuth callback
 3. Backend generates access and refresh tokens
 4. Tokens are set as httpOnly cookies
@@ -137,16 +137,30 @@ cd oauth-nextjs-springboot-backend
 Ensure MongoDB is running locally on `mongodb://localhost:27017` or configure your MongoDB connection string. 
 The application will automatically create the required collections and indexes.
 
-## 3. Create GitHub OAuth Application
-Create a GitHub OAuth application with the following settings:
-- **Homepage URL**: `http://localhost:8080`
-- **Authorization callback URL**: `http://localhost:8080/login/oauth2/code/github`
+## 3. Register a Microsoft Entra ID Application
+Create a web application registration in the Azure portal with the following settings:
+- **Supported account types**: Accounts in this organizational directory only (or broader if needed)
+- **Redirect URI**: `http://localhost:8080/login/oauth2/code/azure`
 
-Note your Client ID and Client Secret for the next step.
+After saving the registration, record the following:
+- **Application (client) ID**
+- **Directory (tenant) ID**
+- A **client secret** created under *Certificates & secrets*
 
-**For Production**: Update the Homepage URL and Authorization callback URL to your production domain (e.g., `https://yourdomain.com` instead of `http://localhost:8080`).
+Grant the application API permissions for `openid`, `profile`, `email`, and `offline_access`. If you plan to request profile photos later, also include `User.Read` and grant admin consent.
 
-## 4. Configure Application
+**For Production**: Update the redirect URI to match your production backend domain (e.g., `https://api.yourdomain.com/login/oauth2/code/azure`).
+
+## 4. Provide Credentials
+Create a file named `.env.local` in the backend project root containing your Entra ID credentials (this file is git-ignored):
+
+```
+AZURE_CLIENT_ID=<your-client-id>
+AZURE_CLIENT_SECRET=<your-client-secret>
+AZURE_TENANT_ID=<your-tenant-id>
+```
+
+## 5. Configure Application
 Copy the `example.application.yaml` file in the project root and rename it to `application.yaml`:
 
 ```yaml
@@ -157,12 +171,21 @@ spring:
     oauth2:
       client:
         registration:
-          github:
-            client-id: GITHUB_CLIENT_ID_HERE
-            client-secret: GITHUB_CLIENT_SECRET_HERE
+          azure:
+            client-id: AZURE_CLIENT_ID_HERE
+            client-secret: AZURE_CLIENT_SECRET_HERE
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/azure"
             scope:
-              - user:email
-              - read:user
+              - openid
+              - profile
+              - email
+              - offline_access
+            client-name: Microsoft Entra ID
+        provider:
+          azure:
+            issuer-uri: https://login.microsoftonline.com/AZURE_TENANT_ID_HERE/v2.0
+            user-name-attribute: preferred_username
   data:
     mongodb:
       uri: MONGODB_URI_HERE
@@ -190,10 +213,10 @@ cookie:
   same-site: Lax  # Options: Strict, Lax, None
 ```
 
-`spring.security.oauth2.client.registration.github`:
-- `client-id`: Your GitHub OAuth application Client ID obtained from GitHub Developer Settings
-- `client-secret`: Your GitHub OAuth application Client Secret obtained from GitHub Developer Settings
-- `scope`: OAuth scopes requesting access to user profile and email information
+`spring.security.oauth2.client.registration.azure`:
+- `client-id`: Microsoft Entra ID application (client) ID obtained from the Azure portal
+- `client-secret`: Client secret created under Certificates & secrets for the app registration
+- `scope`: OAuth scopes requesting profile, email, and offline refresh token access
 
 `spring.data.mongodb`:
 - `uri`: MongoDB connection string specifying the database location and name (e.g., `mongodb://localhost:27017/oauth_db`)
@@ -236,10 +259,10 @@ The application should now be running on [`http://localhost:8080`](http://localh
 
 ## Authentication Flow
 1. Frontend redirects user to `/oauth2/authorization/github`
-2. User authenticates with GitHub
-3. GitHub redirects to callback URL with authorization code
+2. User authenticates with Microsoft Entra ID
+3. Microsoft redirects to callback URL with authorization code
 4. Backend exchanges code for access token
-5. Backend retrieves user information from GitHub
+5. Backend retrieves user information from Microsoft Entra ID tokens
 6. Backend generates JWT tokens and sets cookies
 7. User is redirected to frontend dashboard
 
@@ -310,7 +333,7 @@ More information can be found on the [Frontend for Next.JS & Spring Boot OAuth S
 - [Frontend for Next.JS & Spring Boot OAuth System Repository](https://github.com/mbeps/oauth-nextjs-springboot-frontend)
 - [Spring Boot Documentation](https://docs.spring.io/spring-boot/documentation.html)
 - [Spring Security OAuth2 Documentation](https://docs.spring.io/spring-security/reference/servlet/oauth2/index.html)
-- [GitHub OAuth Documentation](https://docs.github.com/en/apps/oauth-apps)
+- [Microsoft Entra ID OAuth Documentation](https://learn.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow)
 - [JJWT Documentation](https://github.com/jwtk/jjwt)
 - [Spring Data MongoDB Documentation](https://docs.spring.io/spring-data/mongodb/reference/)
 - [MongoDB Documentation](https://www.mongodb.com/docs/)
