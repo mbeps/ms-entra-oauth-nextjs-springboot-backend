@@ -34,6 +34,12 @@ spring:
 
 server:
   port: 8080
+  ssl:
+    enabled: true
+    key-store: classpath:tls/dev-localhost.p12
+    key-store-type: PKCS12
+    key-store-password: changeit
+    key-alias: dev-localhost
 
 # JWT Configuration
 jwt:
@@ -44,11 +50,11 @@ jwt:
 
 # Frontend URL for redirects
 frontend:
-  url: http://localhost:3000
+  url: https://localhost:3000
 
 cookie:
-  secure: false  # Set to true in production (requires HTTPS)
-  same-site: Lax  # Options: Strict, Lax, None
+  secure: true  # Required when HTTPS is enabled
+  same-site: Strict  # Options: Strict, Lax, None (Strict requires both apps on HTTPS)
 
 app:
   security:

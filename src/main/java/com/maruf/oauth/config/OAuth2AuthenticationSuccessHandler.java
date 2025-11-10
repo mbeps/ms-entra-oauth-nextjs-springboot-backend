@@ -34,7 +34,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final RefreshTokenStore refreshTokenStore;
     private final HttpCookieFactory cookieFactory;
 
-    @Value("${frontend.url:http://localhost:3000}")
+    @Value("${frontend.url:https://localhost:3000}")
     private String frontendUrl;
 
     @Value("${jwt.access-token-expiration:900000}") // 15 minutes

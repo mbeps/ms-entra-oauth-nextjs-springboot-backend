@@ -20,7 +20,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${frontend.url:http://localhost:3000}")
+    @Value("${frontend.url:https://localhost:3000}")
     private String frontendUrl;
 
     @Override

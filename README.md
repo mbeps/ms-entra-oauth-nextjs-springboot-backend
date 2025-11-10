@@ -97,7 +97,7 @@ Refresh tokens contain minimal information with type set to "refresh".
 All tokens are signed using HMAC-SHA256 with a secret key.
 
 ## CORS Configuration
-CORS is configured to accept requests from `http://localhost:3000` (frontend URL) with credentials enabled. Allowed methods include GET, POST, PUT, DELETE, and OPTIONS. This enables secure cross-origin communication whilst preventing unauthorised access.
+CORS is configured to accept requests from `https://localhost:3000` (with an `http://` fallback) with credentials enabled. Allowed methods include GET, POST, PUT, DELETE, and OPTIONS. This enables secure cross-origin communication whilst preventing unauthorised access.
 
 ## Authentication Flow
 1. User initiates Microsoft Entra ID OAuth login
@@ -140,7 +140,7 @@ The application will automatically create the required collections and indexes.
 ## 3. Register a Microsoft Entra ID Application
 Create a web application registration in the Azure portal with the following settings:
 - **Supported account types**: Accounts in this organizational directory only (or broader if needed)
-- **Redirect URI**: `http://localhost:8080/login/oauth2/code/azure`
+- **Redirect URI**: `https://localhost:8080/login/oauth2/code/azure`
 
 After saving the registration, record the following:
 - **Application (client) ID**
@@ -206,7 +206,7 @@ jwt:
 
 # Frontend URL for redirects
 frontend:
-  url: http://localhost:3000
+  url: https://localhost:3000
 
 cookie:
   secure: false  # Set to true in production (requires HTTPS)
@@ -227,18 +227,18 @@ cookie:
 - `refresh-token-expiration`: Lifespan of refresh tokens in milliseconds (default: 604800000 = 7 days)
 
 `frontend`:
-- `url`: The URL of your frontend application for CORS configuration and redirects (e.g., `http://localhost:3000`)
+- `url`: The URL of your frontend application for CORS configuration and redirects (e.g., `https://localhost:3000`)
 
 `cookie`:
-- `secure`: Whether cookies should only be sent over HTTPS (set to `false` for local development, `true` for production)
-- `same-site`: Cookie SameSite attribute for CSRF protection (use `Lax` or `Strict`)
+- `secure`: Whether cookies should only be sent over HTTPS (`true` is the default for local HTTPS development; set to `false` only if you must fall back to HTTP).
+- `same-site`: Cookie SameSite attribute for CSRF protection (use `Strict` when both apps run on HTTPS, otherwise drop to `Lax`).
 
 `app.security.refresh-token`:
 - `hashing-enabled`: Stores refresh tokens as SHA-256 hashes in MongoDB when `true` (recommended for production)
 - `rotation-enabled`: Issues a brand new refresh token on every refresh request and revokes the old one when `true`
 
 **For Production**: 
-- Set `cookie.secure` to `true`
+- Keep `cookie.secure` set to `true`
 - Update `frontend.url` to your production frontend domain
 - Use a strong, randomly generated `jwt.secret`
 - Configure MongoDB with authentication and SSL/TLS
@@ -253,7 +253,17 @@ cookie:
 ./gradlew bootRun
 ```
 
-The application should now be running on [`http://localhost:8080`](http://localhost:8080)
+The application should now be running on [`https://localhost:8080`](https://localhost:8080) using the bundled self-signed certificate.
+
+## 7. Trust the Local Certificate (Fedora example)
+To remove browser warnings for both the backend and the HTTPS frontend dev server, trust `backend/src/main/resources/tls/dev-localhost.crt`:
+
+```sh
+sudo cp backend/src/main/resources/tls/dev-localhost.crt /etc/pki/ca-trust/source/anchors/dev-localhost.crt
+sudo update-ca-trust
+```
+
+Firefox maintains its own trust store—import the same `.crt` via **Settings → Privacy & Security → Certificates**. Other Linux distributions have similar CA folders (`/usr/local/share/ca-certificates` on Debian/Ubuntu).
 
 # Usage
 
@@ -325,7 +335,7 @@ GET /api/public/health
 
 ## Using Web UI
 All the actions above can be executed through the Next.JS frontend given it is running.
-The frontend app will be running on [http://localhost:3000](http://localhost:3000) and will require the backend server to be running correctly. 
+The frontend app will be running on [https://localhost:3000](https://localhost:3000) (started with `npm run dev`) and will require the backend server to be running correctly. 
 
 More information can be found on the [Frontend for Next.JS & Spring Boot OAuth System](https://github.com/mbeps/oauth-nextjs-springboot-frontend) repository.
 
