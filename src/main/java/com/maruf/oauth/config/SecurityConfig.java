@@ -40,6 +40,7 @@ public class SecurityConfig {
     private final JwtService jwtService;
     private final HttpCookieFactory cookieFactory;
     private final OAuth2AuthenticationFailureHandler oauth2FailureHandler;
+    private final FrontendProperties frontendProperties;
 
     /**
      * Builds the primary security filter chain covering OAuth2 login, JWT filters, and logout handling.
@@ -112,7 +113,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("https://localhost:3000", "http://localhost:3000"));
+        configuration.setAllowedOrigins(frontendProperties.getAllowedOrigins());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
         configuration.setAllowCredentials(true);

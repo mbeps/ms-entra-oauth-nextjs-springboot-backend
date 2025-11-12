@@ -227,7 +227,8 @@ cookie:
 - `refresh-token-expiration`: Lifespan of refresh tokens in milliseconds (default: 604800000 = 7 days)
 
 `frontend`:
-- `url`: The URL of your frontend application for CORS configuration and redirects (e.g., `https://localhost:3000`)
+- `url`: The URL of your frontend application for redirects (e.g., `https://localhost:3000`)
+- `allowed-origins`: Array of origins permitted to call the backend over XHR/fetch (e.g., `https://localhost:3000`)
 
 `cookie`:
 - `secure`: Whether cookies should only be sent over HTTPS (`true` is the default for local HTTPS development; set to `false` only if you must fall back to HTTP).
@@ -264,6 +265,41 @@ sudo update-ca-trust
 ```
 
 Firefox maintains its own trust store—import the same `.crt` via **Settings → Privacy & Security → Certificates**. Other Linux distributions have similar CA folders (`/usr/local/share/ca-certificates` on Debian/Ubuntu).
+
+## 8. Use a Custom Local Domain (optional)
+Some Microsoft Entra tenants block `localhost` redirect URIs. To use a friendly domain such as `auth.internal.test` entirely on your machine:
+
+1. **Pick a hostname** – this example uses `auth.internal.test`.
+2. **Map it locally** – append `127.0.0.1 auth.internal.test` to `/etc/hosts` (requires `sudo`).
+3. **Regenerate the TLS assets** so they include the new hostname:
+   ```sh
+   keytool -genkeypair \
+     -alias dev-localhost \
+     -keyalg RSA \
+     -keysize 2048 \
+     -storetype PKCS12 \
+     -keystore backend/src/main/resources/tls/dev-localhost.p12 \
+     -storepass changeit \
+     -keypass changeit \
+     -validity 3650 \
+     -dname "CN=auth.internal.test, OU=Dev, O=Local, L=Local, S=NA, C=US" \
+     -ext "SAN=DNS:auth.internal.test"
+
+   # Export the PEM files for the Next.js dev server
+   openssl pkcs12 -in backend/src/main/resources/tls/dev-localhost.p12 \
+     -nocerts -nodes -passin pass:changeit \
+     -out backend/src/main/resources/tls/dev-localhost.key
+   keytool -exportcert -alias dev-localhost \
+     -keystore backend/src/main/resources/tls/dev-localhost.p12 \
+     -storepass changeit -rfc \
+     -file backend/src/main/resources/tls/dev-localhost.crt
+   ```
+4. **Trust the new certificate** using the commands from step 7 (copy the updated `.crt`).
+5. **Update configuration**:
+   - `backend/application.yaml`: set `frontend.url=https://auth.internal.test:3000` and configure `frontend.allowed-origins` (plus `server.ssl.*` if you rename paths/passwords).
+   - `frontend/.env.local`: `NEXT_PUBLIC_API_URL=https://auth.internal.test:8080`.
+   - Azure Entra app → Authentication → Redirect URIs: `https://auth.internal.test:8080/login/oauth2/code/azure`.
+6. **Restart both apps**: `./gradlew bootRun` and `npm run dev`. Visit `https://auth.internal.test:3000`.
 
 # Usage
 

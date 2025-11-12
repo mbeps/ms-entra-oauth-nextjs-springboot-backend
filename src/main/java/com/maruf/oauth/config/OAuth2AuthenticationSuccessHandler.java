@@ -33,9 +33,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtService jwtService;
     private final RefreshTokenStore refreshTokenStore;
     private final HttpCookieFactory cookieFactory;
-
-    @Value("${frontend.url:https://localhost:3000}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     @Value("${jwt.access-token-expiration:900000}") // 15 minutes
     private Long accessTokenExpiration;
@@ -61,7 +59,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String username = OAuth2AttributeExtractor.resolveUsername(oauth2User);
         if (username == null) {
             log.error("Unable to determine username from OAuth2 attributes: {}", oauth2User.getAttributes());
-            getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/?error=missing_profile");
+            getRedirectStrategy().sendRedirect(request, response, frontendProperties.getUrl() + "/?error=missing_profile");
             return;
         }
         
@@ -84,7 +82,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         log.info("Access and refresh tokens generated for user: {}", username);
         
         // Redirect to frontend dashboard
-        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/dashboard");
+        getRedirectStrategy().sendRedirect(request, response, frontendProperties.getUrl() + "/dashboard");
     }
 
     /**

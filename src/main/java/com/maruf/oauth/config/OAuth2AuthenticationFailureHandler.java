@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
@@ -20,8 +19,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${frontend.url:https://localhost:3000}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,
@@ -35,6 +33,6 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
         }
 
         getRedirectStrategy().sendRedirect(request, response,
-                frontendUrl + "/?error=auth_failed");
+                frontendProperties.getUrl() + "/?error=auth_failed");
     }
 }
