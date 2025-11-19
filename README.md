@@ -1,3 +1,7 @@
+# ⚠️ DEPRECATED: View [Backend for Next.JS & Spring Boot OAuth System](https://github.com/mbeps/oauth-nextjs-springboot-backend)
+
+---
+
 # **Backend for Next.JS & Spring Boot OAuth System**
 
 A robust OAuth 2.0 authentication backend built with Spring Boot 3 and MongoDB. 
